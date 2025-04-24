@@ -12,12 +12,21 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+/**
+ * auth api class
+ */
 @Path("/auth")
 public class AuthenticationAPIResource {
 
     @EJB
     private UserService userService;
 
+    /**
+     * register handler
+     *
+     * @param user user
+     * @return response
+     */
     @POST
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -26,12 +35,18 @@ public class AuthenticationAPIResource {
         if (!userService.register(user.getUsername(), user.getPassword())) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
-                    .entity(new AuthResponseTemplate("Username already exists", "",""))
+                    .entity(new AuthResponseTemplate("Username already exists", "", ""))
                     .build();
         }
         return Response.ok().build();
     }
 
+    /**
+     * login handler
+     *
+     * @param user user
+     * @return response
+     */
     @POST
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)

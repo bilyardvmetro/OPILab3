@@ -15,6 +15,9 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 
+/**
+ * auth api class
+ */
 @Path("/point")
 public class PointAPIResource {
 
@@ -24,6 +27,13 @@ public class PointAPIResource {
     @EJB
     UserService userService;
 
+    /**
+     * add point handler
+     *
+     * @param request    point request
+     * @param auth_token auth token
+     * @return response
+     */
     @POST
     @Path("/add")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -54,6 +64,12 @@ public class PointAPIResource {
         return Response.status(Response.Status.CREATED).entity(hitResult).build();
     }
 
+    /**
+     * register handler
+     *
+     * @param auth_token auth token
+     * @return response
+     */
     @GET
     @Path("/getUserPoints")
     @Produces(MediaType.APPLICATION_JSON)

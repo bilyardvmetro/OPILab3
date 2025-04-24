@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Auth Response DTO
+ */
 @Getter
 @Setter
 @AllArgsConstructor

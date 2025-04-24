@@ -8,6 +8,9 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
+/**
+ * Filter which checks user's auth token
+ */
 @WebFilter("/secured/*")
 public class JWTFilter implements Filter {
     @Override

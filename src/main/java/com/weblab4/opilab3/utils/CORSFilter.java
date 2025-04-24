@@ -7,6 +7,9 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
+/**
+ * CORS filter
+ */
 @WebFilter("/*")
 public class CORSFilter implements Filter {
 

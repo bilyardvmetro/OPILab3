@@ -1,3 +1,7 @@
+import org.xml.sax.helpers.DefaultHandler
+import javax.xml.parsers.DocumentBuilderFactory
+import java.security.MessageDigest
+
 plugins {
     id 'java'
     id 'war'
@@ -17,7 +21,7 @@ ext {
 sourceCompatibility = '17'
 targetCompatibility = '17'
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
@@ -45,10 +49,231 @@ dependencies {
     // https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
     implementation 'io.jsonwebtoken:jjwt:0.9.1'
 
+    // Основная реализация XML DOM/SAX парсера
+    implementation 'xerces:xercesImpl:2.12.2'
+    // Интерфейсы (javax.xml.parsers, org.w3c.dom и др.)
+    implementation 'xml-apis:xml-apis:1.4.01'
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
+
+tasks.register('music') {
+    description = 'Plays music after build'
+    group = 'OPILab3 targets'
+
+    doLast {
+        def songFile = file('music/i_got_a_brand_new_saxophone.mp3')
+        def songURI = songFile.toURI().toString()
+
+        def powershellCommand = """
+            Add-Type -AssemblyName presentationCore;
+            \$player = New-Object System.Windows.Media.MediaPlayer;
+            \$player.Open([uri] '${songURI}');
+            \$player.Play();
+            Start-Sleep -Seconds 10
+        """
+
+        if (System.properties['os.name'].toString().toLowerCase().contains('windows')) {
+            exec {
+                commandLine 'powershell', '-Command', powershellCommand
+            }
+        } else {
+            println "Unsupported OS for playing music :("
+        }
+    }
+}
+
+tasks.register('myCompile') {
+    description = 'Compile .java files'
+    group = 'OPILab3 targets'
+
+    def srcDir = file('src/main/java/com/weblab4/opilab3')
+    def outDir = file('build/classes/java/main')
+
+    inputs.dir(srcDir)
+    outputs.dir(outDir)
+
+    doLast {
+        outDir.mkdirs()
+        def javaFiles = fileTree(srcDir).matching { include '**/*.java' }.files.collect { it.path }
+
+        if (javaFiles.isEmpty()) {
+            throw new GradleException("There are no .java files to compile")
+        }
+
+        def classpath = configurations.compileClasspath.files.join(File.pathSeparator)
+        def command = ['javac', '-d', outDir.path]
+
+        if (classpath) {
+            command += ['-cp', classpath]
+        }
+
+        command += javaFiles
+
+        println "Running: ${command.join(' ')}"
+        exec {
+            commandLine command
+        }
+
+        copy {
+            from 'src/main/resources'
+            into 'build/resources/main'
+        }
+
+    }
+}
+
+tasks.register('myBuild') {
+    description = 'Build .jar file'
+    group = 'OPILab3 targets'
+
+    dependsOn myCompile
+
+    doLast {
+        def jarFile = file('build/libs/OPILab3.jar')
+        def classesFiles = file('build/classes')
+        def manifest = file('build/tmp/jar/MANIFEST.MF')
+
+        jarFile.parentFile.mkdirs()
+
+        if (!manifest.exists()) {
+            manifest.parentFile.mkdirs()
+            manifest.text = "Manifest-Version: 1.0\n"
+        }
+
+        def command = [
+                'jar', 'cmf', manifest.absolutePath, jarFile.absolutePath,
+                '-C', classesFiles.absolutePath, '.'
+        ]
+
+        println "Executing ${command.join(' ')}"
+        exec {
+            commandLine command
+        }
+        println "JAR-file ${jarFile} has been successfully built"
+    }
+}
+myBuild.finalizedBy music
+
+tasks.register('myClean') {
+    description = 'Remove \'build\' directory'
+    group = 'OPILab3 targets'
+
+    doLast {
+        def buildDir = file('build')
+
+        if (buildDir.exists()) {
+            println "Removing ${buildDir} directory..."
+            buildDir.deleteDir()
+        } else {
+            println '\'build\' directory not found'
+        }
+    }
+}
+
+tasks.register('scp') {
+    description = 'Send .jar file to specific server by scp'
+    group = 'OPILab3 targets'
+    dependsOn myBuild
+
+    // Подразумевается, что на сервере и клиенте есть ssh ключи для отправки через scp без ввода пароля
+    doLast {
+        def server = 's413041@se.ifmo.ru:/home/studs/s413041/OPILab3'
+        def command = ['scp', '-P', '2222', 'build/libs/OPILab3.jar', server]
+
+        println "Executing ${command.join(' ')}"
+        println "Sending .jar to ${server}..."
+        exec {
+            commandLine command
+        }
+    }
+}
+
+tasks.register('xml') {
+    description = 'Validates all project\'s .xml files'
+    group = 'OPILab3 targets'
+
+    doLast {
+        def xmlFiles = fileTree('src/main/resources') {
+            include '**/*.xml'
+        }
+
+        def factory = DocumentBuilderFactory.newInstance()
+        factory.setValidating(false)
+
+        def builder = factory.newDocumentBuilder()
+        builder.setErrorHandler(new DefaultHandler())
+
+        xmlFiles.each {
+            try {
+                builder.parse(it)
+                println "File ${it} is valid"
+            } catch (Exception e) {
+                println "Error in file ${it}: ${e.message}"
+            }
+        }
+    }
+}
+
+static def calculateChecksum(File file, String algorithm) {
+    def digest = MessageDigest.getInstance(algorithm)
+    file.eachByte(4096) { buffer, bytesRead ->
+        digest.update(buffer, 0, bytesRead)
+    }
+    return digest.digest().encodeHex()
+}
+
+tasks.register('generateJavadoc', Javadoc) {
+    source = sourceSets.main.allJava
+    classpath = sourceSets.main.compileClasspath
+    destinationDir = file("build/docs/javadoc")
+    title = "Project Documentation"
+    options.memberLevel = JavadocMemberLevel.PUBLIC
+    options.encoding = 'UTF-8'
+}
+
+tasks.register('javadocJar', Jar) {
+    archiveClassifier.set('javadoc')
+    from(tasks.named('generateJavadoc').map { task -> ((Javadoc) task).destinationDir })
+}
+
+tasks.register('doc') {
+    description = 'Generates javadoc and add MD5 and SHA-1 classes hashes to MANIFEST.MF'
+    group = 'OPILab3 targets'
+
+    dependsOn generateJavadoc, javadocJar
+
+    doLast {
+        def manifestFile = file("build/tmp/jar/MANIFEST.MF")
+
+        if (manifestFile.exists()) {
+            def manifestContent = new StringBuilder()
+            manifestContent << "Manifest-Version: 1.0\n"
+
+            def files = sourceSets.main.allJava.filter { it.exists() }
+
+            files.each  { file ->
+                if(file.exists()) {
+                    def md5 = calculateChecksum(file, 'MD5')
+                    def sha1 = calculateChecksum(file, 'SHA-1')
+
+                    manifestContent << "\nName: ${file.name}\n"
+                    manifestContent << "MD5-Hash: ${md5}\n"
+                    manifestContent << "SHA1-Hash: ${sha1}\n"
+                }
+            }
+            manifestContent << "\n"
+
+            manifestFile.parentFile.mkdirs()
+            manifestFile.text = manifestContent.toString()
+        } else {
+            println "Не найден MANIFEST.MF для обновления"
+        }
+
+    }
+}
+doc.finalizedBy myBuild
 
 test {
     useJUnitPlatform()
