@@ -275,6 +275,56 @@ tasks.register('doc') {
 }
 doc.finalizedBy myBuild
 
+tasks.register('team') {
+    description = 'Build previous 3 versions of project into .jar and .zip'
+    group = 'OPILab3 targets'
+
+    doLast {
+        // получить имя текущей ветки
+        def currentBranch = 'git rev-parse --abbrev-ref HEAD'.execute().text.trim()
+        // получить хэши 3 коммитов предыдущих
+        def revisions = 'git log -3 --pretty=format:"%H"'.execute().text.readLines()
+
+        def outputDir = file("build/team-builds")
+        outputDir.deleteDir()
+        outputDir.mkdirs()
+
+        revisions.each { commitId ->
+            try {
+                def shortId = commitId.substring(0, 7)
+                println "Building revision: $shortId"
+
+                // Переключаемся на коммит
+                "git checkout $commitId --force".execute().waitFor()
+
+                // Запускаем сборку
+                def buildResult = './gradlew myBuild --stacktrace'.execute().waitFor()
+
+                if (buildResult == 0) {
+                    // Копируем JAR-файлы
+                    fileTree(dir: "build/libs").matching {
+                        include '*.jar'
+                    }.each { jarFile ->
+                        copy {
+                            from jarFile
+                            into outputDir
+                            rename { "${jarFile.name - '.jar'}-${shortId}.jar" }
+                        }
+                    }
+                } else {
+                    println "Build failed for commit $shortId"
+                }
+
+            } catch (Exception e) {
+                println "Error processing $commitId: ${e.message}"
+            } finally {
+                // Возвращаемся на исходную ветку
+                "git checkout $currentBranch --force".execute().waitFor()
+            }
+        }
+    }
+}
+
 test {
     useJUnitPlatform()
 }
