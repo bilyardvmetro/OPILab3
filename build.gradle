@@ -428,6 +428,25 @@ tasks.register('bringBackSrc') {
     mustRunAfter myBuild
 }
 
+tasks.register('env') {
+    group = 'opilab3 targets'
+    description = 'Build and Run project with environment from "environment.properties" file'
+
+    doLast {
+        // Чтение параметров из файла
+        def props = new Properties()
+        file("properties/env/environment.properties").withInputStream { props.load(it) }
+
+        javaexec {
+            executable = "${System.getProperty('java.home')}/bin/java"
+            jvmArgs = props.getProperty("jvmArgs", "").split(' ').findAll { it }
+            mainClass = props.getProperty("mainClass")
+            classpath = sourceSets.main.runtimeClasspath
+        }
+
+    }
+}
+
 test {
     useJUnitPlatform()
 }
