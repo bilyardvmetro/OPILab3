@@ -447,6 +447,51 @@ tasks.register('env') {
     }
 }
 
+// Метод для получения списка измененных файлов
+def getChangedFiles() {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'diff', '--name-only', 'HEAD'
+        standardOutput = stdout
+        ignoreExitValue = true
+    }
+    return stdout.toString().trim().split('\n').toList()
+}
+
+// Метод для проверки изменений в исключенных классах
+static def hasExcludedChanges(changedFiles, excludedClassesFile) {
+    def excludedClasses = excludedClassesFile.readLines().findAll { it.trim() && !it.startsWith('#') }
+    return changedFiles.any { changedFile ->
+        excludedClasses.any { excluded ->
+            changedFile.contains(excluded)
+        }
+    }
+}
+
+tasks.register('diff') {
+    group = 'opilab3 targets'
+    description = 'Checks working copy state and commits if changes don\\\'t affect classes from excludedClasses.txt file'
+
+    def excludedClassesFile = file('properties/excludedClasses.txt')
+
+    doLast {
+        if (!excludedClassesFile.exists()) {
+            throw new GradleException("Excluded classes file not found: ${excludedClassesFile}")
+        }
+
+        def changedFiles = getChangedFiles()
+        if (hasExcludedChanges(changedFiles, excludedClassesFile)) {
+            logger.lifecycle('Commit skipped: changes detected in excluded classes')
+        } else {
+            exec {
+                commandLine 'git', 'commit', '-a', '-m', 'Auto-commit: changes not affecting excluded classes'
+                logger.lifecycle('Changes committed successfully')
+            }
+        }
+    }
+
+}
+
 test {
     useJUnitPlatform()
 }
