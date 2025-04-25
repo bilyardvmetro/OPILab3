@@ -84,13 +84,13 @@ tasks.register('music') {
     }
 }
 
+def srcDir = file('src/main/java/com/weblab4/opilab3')
 tasks.register('myCompile') {
     description = 'Compile .java files'
     group = 'OPILab3 targets'
 
     dependsOn native2ascii
 
-    def srcDir = file('src/main/java/com/weblab4/opilab3')
     def outDir = file('build/classes/java/main')
 
     inputs.dir(srcDir)
@@ -155,7 +155,7 @@ tasks.register('myBuild') {
         }
         println "JAR-file ${jarFile} has been successfully built"
     }
-    finalizedBy music
+//    finalizedBy music
 }
 
 tasks.register('myClean') {
@@ -374,7 +374,7 @@ tasks.register('native2ascii', Copy) {
             // Конвертируем содержимое
             String convertedContent = convertToUnicode(content)
 
-            // Перезаписываем файл с конвертированным содержимым
+            // Перезаписываем файл
             file.write(convertedContent, 'ISO-8859-1')
 
             logger.lifecycle("Converted: ${file.name} (${content.length()} chars -> ${convertedContent.length()} chars)")
@@ -382,6 +382,51 @@ tasks.register('native2ascii', Copy) {
     }
 }
 
+tasks.register('alt', Copy) {
+    dependsOn myClean
+    description = 'Create alternative version of project with another names of classes and variables'
+    group = 'OPILab3 targets'
+
+    def replacements = new Properties()
+    file("properties/alt/replace.properties").withInputStream { replacements.load(it) }
+
+    from sourceSets.main.java.srcDirs
+    into "build/alt-src"
+
+    eachFile { file ->
+        if (file.name.endsWith('.java')) {
+            filter { line ->
+                def result = line
+                replacements.each { original, replacement ->
+                    result = result.replaceAll(original, replacement)
+                }
+                return result
+            }
+        }
+    }
+
+    rename { fileName ->
+        def newName = fileName
+        replacements.each { orig, alt ->
+            newName = newName.replace(orig, alt)
+        }
+        newName
+    }
+
+    doFirst {
+        mkdir "build/alt-src"
+    }
+
+    doLast {
+        srcDir = file('build/alt-src')
+    }
+    finalizedBy myBuild
+}
+
+tasks.register('bringBackSrc') {
+    srcDir = file('src/main/java/com/weblab4/opilab3')
+    mustRunAfter myBuild
+}
 
 test {
     useJUnitPlatform()
