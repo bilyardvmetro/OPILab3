@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * auth api class
@@ -26,6 +27,8 @@ public class PointAPIResource {
 
     @EJB
     UserService userService;
+
+    private final ResourceBundle messages = ResourceBundle.getBundle("responses");
 
     /**
      * add point handler
@@ -45,18 +48,18 @@ public class PointAPIResource {
         System.out.println(request.getR());
 
         if (auth_token == null || !auth_token.startsWith("Bearer "))
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid or missing Authorization header").build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(messages.getString("token_invalid_error")).build();
 
         String token = auth_token.substring(7);
 
         if (!JWTUtil.validateToken(token))
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid token").build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(messages.getString("token_auth_header_error")).build();
 
         String username = JWTUtil.getUsernameFromToken(token);
         User owner = userService.findByUsername(username);
 
         if (owner == null)
-            return Response.status(Response.Status.UNAUTHORIZED).entity("User not found").build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(messages.getString("token_user_not_found_error")).build();
 
         boolean hitResult = AreaFucntions.hitCheck(request.getX(), request.getY(), request.getR());
         pointService.add(new Point(request.getX(), request.getY(), request.getR(), hitResult, owner));
@@ -76,18 +79,18 @@ public class PointAPIResource {
     public Response getUserPoints(@HeaderParam("Authorization") String auth_token) {
 
         if (auth_token == null || !auth_token.startsWith("Bearer "))
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid or missing Authorization header").build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(messages.getString("token_invalid_error")).build();
 
         String token = auth_token.substring(7);
 
         if (!JWTUtil.validateToken(token))
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid token").build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(messages.getString("token_auth_header_error")).build();
 
         String username = JWTUtil.getUsernameFromToken(token);
         User owner = userService.findByUsername(username);
 
         if (owner == null)
-            return Response.status(Response.Status.UNAUTHORIZED).entity("User not found").build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(messages.getString("token_user_not_found_error")).build();
 
         List<Point> points = pointService.getAllPointsByUsername(username);
 

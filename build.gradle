@@ -268,7 +268,7 @@ tasks.register('doc') {
             manifestFile.parentFile.mkdirs()
             manifestFile.text = manifestContent.toString()
         } else {
-            println "Не найден MANIFEST.MF для обновления"
+            println "MANIFEST.MF not found"
         }
 
     }
@@ -334,6 +334,10 @@ tasks.register('team') {
         }
     }
     finalizedBy 'packageJars'
+}
+
+tasks.register('native2ascii') {
+
 }
 
 

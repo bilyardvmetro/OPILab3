@@ -12,6 +12,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.ResourceBundle;
+
 /**
  * auth api class
  */
@@ -20,6 +22,8 @@ public class AuthenticationAPIResource {
 
     @EJB
     private UserService userService;
+
+    private final ResourceBundle messages = ResourceBundle.getBundle("responses");
 
     /**
      * register handler
@@ -35,7 +39,7 @@ public class AuthenticationAPIResource {
         if (!userService.register(user.getUsername(), user.getPassword())) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
-                    .entity(new AuthResponseTemplate("Username already exists", "", ""))
+                    .entity(new AuthResponseTemplate(messages.getString("auth_username_already_exists_error"), "", ""))
                     .build();
         }
         return Response.ok().build();
@@ -56,12 +60,12 @@ public class AuthenticationAPIResource {
         if (!userService.login(user.getUsername(), user.getPassword())) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
-                    .entity(new AuthResponseTemplate("Username doesn't exists or wrong password", "", ""))
+                    .entity(new AuthResponseTemplate(messages.getString("auth_wrong_password_or_non_existing_user_error"), "", ""))
                     .build();
         }
 
         String token = JWTUtil.generateToken(user.getUsername());
-        return Response.ok().entity(new AuthResponseTemplate("Login success", user.getUsername(), token)).build();
+        return Response.ok().entity(new AuthResponseTemplate(messages.getString("auth_success"), user.getUsername(), token)).build();
     }
 
 }
