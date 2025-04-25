@@ -492,6 +492,147 @@ tasks.register('diff') {
 
 }
 
+tasks.register('history') {
+    group = 'opilab3 targets'
+    description = 'Finds the last working revision by sequentially checking previous versions until compilation succeeds'
+
+    doLast {
+        def wDir = project.projectDir
+        def diffOutputFile = file("build/breaking-changes.diff")
+
+        // Получаем текущий коммит
+        def currentCommit = getCurrentCommit(wDir)
+        logger.lifecycle("Current commit: ${currentCommit.take(7)}")
+
+        // Получаем родительский коммит
+        def prevCommit = getParentCommit(wDir, currentCommit)
+        def lastWorkingCommit = null
+
+        // Последовательно проверяем коммиты пока не найдем рабочий или не дойдем до начала
+        while (prevCommit != null) {
+            logger.lifecycle("Checking commit: ${prevCommit.take(7)}...")
+
+            // Чекаут коммита
+            exec {
+                workingDir wDir
+                commandLine 'git', 'checkout', '--force', '--quiet', prevCommit
+            }
+
+            // Пробуем скомпилировать
+            try {
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                def outDir = file('build/classes/java/main')
+
+                inputs.dir(srcDir)
+                outputs.dir(outDir)
+
+                outDir.mkdirs()
+                def javaFiles = fileTree(srcDir).matching { include '**/*.java' }.files.collect { it.path }
+
+                if (javaFiles.isEmpty()) {
+                    throw new GradleException("There are no .java files to compile")
+                }
+
+                def classpath = configurations.compileClasspath.files.join(File.pathSeparator)
+                def command = ['javac', '-d', outDir.path]
+
+                if (classpath) {
+                    command += ['-cp', classpath]
+                }
+
+                command += javaFiles
+
+                println "Running: ${command.join(' ')}"
+                exec {
+                    commandLine command
+                }
+
+                copy {
+                    from 'src/main/resources'
+                    into 'build/resources/main'
+                }
+                ////////////////////////////////////////////////////////////////////////////////////////////////////////
+                lastWorkingCommit = prevCommit
+                logger.lifecycle("Compilation successful")
+                break
+            } catch (Exception ignored) {
+                logger.lifecycle("Compilation failed")
+                def nextCommit = prevCommit
+                prevCommit = getParentCommit(wDir, prevCommit)
+
+                // Если это был последний коммит и он не работает
+                if (prevCommit == null) {
+                    generateDiffReport(wDir, nextCommit, diffOutputFile)
+                }
+            }
+        }
+
+        // Формируем результат
+        if (lastWorkingCommit) {
+            logger.lifecycle("Last working commit found: ${lastWorkingCommit.take(7)}")
+
+            // Получаем следующий коммит после рабочего
+            def breakingCommit = getChildCommit(wDir, lastWorkingCommit)
+            if (breakingCommit) {
+                logger.lifecycle("First broken commit: ${breakingCommit.take(7)}")
+                generateDiffReport(wDir, breakingCommit, diffOutputFile)
+                logger.lifecycle("Diff report generated: ${diffOutputFile}")
+            }
+        } else {
+            logger.lifecycle("No working commits found in history")
+        }
+
+        // Возвращаемся к исходному коммиту
+        exec {
+            workingDir wDir
+            commandLine 'git', 'checkout', '--force', '--quiet', currentCommit
+        }
+    }
+}
+
+def getCurrentCommit(File wDir) {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        workingDir = wDir
+        commandLine 'git', 'rev-parse', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+def getParentCommit(File wDir,String commit) {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        workingDir = wDir
+        commandLine 'git', 'rev-parse', "${commit}^"
+        standardOutput = stdout
+        ignoreExitValue = true
+    }
+    def result = stdout.toString().trim()
+    return result.empty ? null : result
+}
+
+def getChildCommit(File wDir, String commit) {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        workingDir = wDir
+        commandLine 'git', 'rev-list', '--ancestry-path', "${commit}..HEAD", '--reverse'
+        standardOutput = stdout
+        ignoreExitValue = true
+    }
+    def commits = stdout.toString().trim().split('\n')
+    return commits.empty ? null : commits[0]
+}
+
+def generateDiffReport(File wDir, String commit, File outputFile) {
+    outputFile.parentFile.mkdirs()
+    exec {
+        workingDir = wDir
+        commandLine 'git', 'diff', '--no-color', "${commit}^", commit
+        standardOutput = new FileOutputStream(outputFile)
+    }
+}
+
 test {
     useJUnitPlatform()
 }
