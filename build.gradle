@@ -88,6 +88,8 @@ tasks.register('myCompile') {
     description = 'Compile .java files'
     group = 'OPILab3 targets'
 
+    dependsOn native2ascii
+
     def srcDir = file('src/main/java/com/weblab4/opilab3')
     def outDir = file('build/classes/java/main')
 
@@ -253,8 +255,8 @@ tasks.register('doc') {
 
             def files = sourceSets.main.allJava.filter { it.exists() }
 
-            files.each  { file ->
-                if(file.exists()) {
+            files.each { file ->
+                if (file.exists()) {
                     def md5 = calculateChecksum(file, 'MD5')
                     def sha1 = calculateChecksum(file, 'SHA-1')
 
@@ -336,8 +338,48 @@ tasks.register('team') {
     finalizedBy 'packageJars'
 }
 
-tasks.register('native2ascii') {
+static String convertToUnicode(String input) {
+    StringBuilder result = new StringBuilder()
+    for (char c : input.toCharArray()) {
+        if (c < 128) {
+            result.append(c)
+        } else {
+            result.append(String.format('\\u%04X', (int) c))
+        }
+    }
+    return result.toString()
+}
 
+tasks.register('native2ascii', Copy) {
+    description = 'Converts localization files to ASCII-escaped Unicode'
+    group = 'OPILab3 targets'
+
+    def localizationDir = file('src/main/resources/locale')
+    def tempDir = file("build/tmp/native2ascii")
+
+    doFirst {
+        tempDir.mkdirs()
+    }
+
+    from(localizationDir) {
+        include '**/*.properties'
+    }
+    into tempDir
+
+    doLast {
+        fileTree(tempDir).include('**/*.properties').each { File file ->
+            // Читаем содержимое файла в UTF-8
+            String content = file.getText('UTF-8')
+
+            // Конвертируем содержимое
+            String convertedContent = convertToUnicode(content)
+
+            // Перезаписываем файл с конвертированным содержимым
+            file.write(convertedContent, 'ISO-8859-1')
+
+            logger.lifecycle("Converted: ${file.name} (${content.length()} chars -> ${convertedContent.length()} chars)")
+        }
+    }
 }
 
 
