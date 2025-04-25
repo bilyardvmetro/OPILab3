@@ -12,6 +12,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
@@ -23,7 +24,7 @@ public class AuthenticationAPIResource {
     @EJB
     private UserService userService;
 
-    private final ResourceBundle messages = ResourceBundle.getBundle("responses");
+    private final ResourceBundle messages = ResourceBundle.getBundle("locale/responses", Locale.getDefault());
 
     /**
      * register handler
@@ -36,6 +37,7 @@ public class AuthenticationAPIResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(User user) {
+        System.out.println(messages);
         if (!userService.register(user.getUsername(), user.getPassword())) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)

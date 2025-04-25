@@ -28,7 +28,7 @@ public class PointAPIResource {
     @EJB
     UserService userService;
 
-    private final ResourceBundle messages = ResourceBundle.getBundle("responses");
+    private final ResourceBundle messages = ResourceBundle.getBundle("locale/responses");
 
     /**
      * add point handler
