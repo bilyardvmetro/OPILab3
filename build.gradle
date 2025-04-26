@@ -512,125 +512,134 @@ tasks.register('history') {
     description = 'Finds the last working revision by sequentially checking previous versions until compilation succeeds'
 
     doLast {
-        def wDir = project.projectDir
-        def diffOutputFile = file("build/breaking-changes.diff")
+        def maxAttempts = 50
+        def attempt = 0
 
-        // Получаем текущий коммит
-        def currentCommit = getCurrentCommit(wDir)
-        logger.lifecycle("Current commit: ${currentCommit.take(7)}")
+        while (!compileSucceeded && attempt < maxAttempts) {
+            attempt++
+            println "Попытка #$attempt: Откат к предыдущему коммиту..."
 
-        // Получаем родительский коммит
-        def prevCommit = getParentCommit(wDir, currentCommit)
-        def lastWorkingCommit = null
-
-        // Последовательно проверяем коммиты пока не найдем рабочий или не дойдем до начала
-        while (prevCommit != null) {
-            logger.lifecycle("Checking commit: ${prevCommit.take(7)}...")
-
-            // Чекаут коммита
+            // Получаем текущий коммит и первый коммит
+            def currentCommit = new ByteArrayOutputStream()
             exec {
-                workingDir wDir
-                commandLine 'git', 'checkout', '--force', '--quiet', prevCommit
+                commandLine 'git', 'rev-parse', 'HEAD'
+                standardOutput = currentCommit
             }
+            currentCommit = currentCommit.toString().trim()
 
-            // Пробуем скомпилировать
-            if (tryToCompile(project)) {
-                lastWorkingCommit = prevCommit
-                logger.lifecycle("Compilation successful")
-                break
-            } else {
-                logger.lifecycle("Compilation failed")
-                def nextCommit = prevCommit
-                prevCommit = getParentCommit(wDir, prevCommit)
+            def firstCommit = new ByteArrayOutputStream()
+            exec {
+                commandLine 'git', 'rev-list', '--max-parents=0', 'HEAD'
+                standardOutput = firstCommit
+            }
+            firstCommit = firstCommit.toString().trim()
 
-                // Если это был последний коммит и он не работает
-                if (prevCommit == null) {
-                    generateDiffReport(wDir, nextCommit, diffOutputFile)
+            if (currentCommit == firstCommit) {
+                println "Достигнут первый коммит. Формируем diff..."
+
+                def nextCommit = new ByteArrayOutputStream()
+                exec {
+                    commandLine 'git', 'rev-list', '--reverse', 'HEAD..HEAD@{1}'
+                    standardOutput = nextCommit
+                    ignoreExitValue true
                 }
+
+                def nextCommitId = nextCommit.toString().trim().split("\n")[0]
+
+                if (nextCommitId) {
+                    def diffOutput = new ByteArrayOutputStream()
+                    exec {
+                        commandLine 'git', 'diff', currentCommit, nextCommitId
+                        standardOutput = diffOutput
+                        ignoreExitValue true
+                    }
+
+                    def diffFile = file("build/diff_report.txt")
+                    diffFile.parentFile.mkdirs()
+                    diffFile.text = diffOutput.toString()
+
+                    println "Diff сохранён в ${diffFile.path}"
+                } else {
+                    println "Следующий коммит не найден."
+                }
+
+                break
+            }
+
+            // Откат на предыдущий коммит
+            exec {
+                commandLine 'git', 'checkout', 'HEAD^'
+            }
+
+            // Снова пробуем собрать
+            println "Пробуем скомпилировать после отката..."
+
+            def compileAttempt = exec {
+                commandLine myCompile
+                ignoreExitValue = true
+            }
+
+            buildSucceeded = (compileAttempt.exitValue == 0)
+
+            if (buildSucceeded) {
+                println "Компиляция успешна после отката!"
+            } else {
+                println "Компиляция всё ещё не удалась."
             }
         }
 
-        // Формируем результат
-        if (lastWorkingCommit) {
-            logger.lifecycle("Last working commit found: ${lastWorkingCommit.take(7)}")
-
-            // Получаем следующий коммит после рабочего
-            def breakingCommit = getChildCommit(wDir, lastWorkingCommit)
-            if (breakingCommit) {
-                logger.lifecycle("First broken commit: ${breakingCommit.take(7)}")
-                generateDiffReport(wDir, breakingCommit, diffOutputFile)
-                logger.lifecycle("Diff report generated: ${diffOutputFile}")
-            }
-        } else {
-            logger.lifecycle("No working commits found in history")
-        }
-
-        // Возвращаемся к исходному коммиту
-        exec {
-            workingDir wDir
-            commandLine 'git', 'checkout', '--force', '--quiet', currentCommit
+        if (!buildSucceeded) {
+            throw new GradleException("Не удалось собрать проект ни на одной ревизии.")
         }
     }
 }
 
-def tryToCompile(Project project) {
-    def result = new ByteArrayOutputStream()
-    try {
-        exec {
-            workingDir = project.projectDir
-            commandLine "${project.gradle.gradleHomeDir}/bin/gradle", 'myCompile', '--quiet'
-            standardOutput = result
-            errorOutput = result
-            ignoreExitValue = true
-        }
-        return true
-    } catch (Exception ignored) {
-        return false
-    }
+history.onlyIf {
+    tasks.getByName("myCompile").state.failure != null
 }
 
-def getCurrentCommit(File wDir) {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        workingDir = wDir
-        commandLine 'git', 'rev-parse', 'HEAD'
-        standardOutput = stdout
-    }
-    return stdout.toString().trim()
-}
+//def getCurrentCommit(File wDir) {
+//    def stdout = new ByteArrayOutputStream()
+//    exec {
+//        workingDir = wDir
+//        commandLine 'git', 'rev-parse', 'HEAD'
+//        standardOutput = stdout
+//    }
+//    return stdout.toString().trim()
+//}
 
-def getParentCommit(File wDir, String commit) {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        workingDir = wDir
-        commandLine 'git', 'rev-parse', "${commit}^"
-        standardOutput = stdout
-        ignoreExitValue = true
-    }
-    def result = stdout.toString().trim()
-    return result.empty ? null : result
-}
+//def getParentCommit(File wDir, String commit) {
+//    def stdout = new ByteArrayOutputStream()
+//    exec {
+//        workingDir = wDir
+//        commandLine 'git', 'rev-parse', "${commit}^"
+//        standardOutput = stdout
+//        ignoreExitValue = true
+//    }
+//    def result = stdout.toString().trim()
+//    return result.empty ? null : result
+//}
+//
+//def getChildCommit(File wDir, String commit) {
+//    def stdout = new ByteArrayOutputStream()
+//    exec {
+//        workingDir = wDir
+//        commandLine 'git', 'rev-list', '--ancestry-path', "${commit}..HEAD", '--reverse'
+//        standardOutput = stdout
+//        ignoreExitValue = true
+//    }
+//    def commits = stdout.toString().trim().split('\n')
+//    return commits.empty ? null : commits[0]
+//}
 
-def getChildCommit(File wDir, String commit) {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        workingDir = wDir
-        commandLine 'git', 'rev-list', '--ancestry-path', "${commit}..HEAD", '--reverse'
-        standardOutput = stdout
-        ignoreExitValue = true
-    }
-    def commits = stdout.toString().trim().split('\n')
-    return commits.empty ? null : commits[0]
-}
-
-def generateDiffReport(File wDir, String commit, File outputFile) {
-    outputFile.parentFile.mkdirs()
-    exec {
-        workingDir = wDir
-        commandLine 'git', 'diff', '--no-color', "${commit}^", commit
-        standardOutput = new FileOutputStream(outputFile)
-    }
-}
+//def generateDiffReport(File wDir, String commit, File outputFile) {
+//    outputFile.parentFile.mkdirs()
+//    exec {
+//        workingDir = wDir
+//        commandLine 'git', 'diff', '--no-color', "${commit}^", commit
+//        standardOutput = new FileOutputStream(outputFile)
+//    }
+//}
 
 test {
     useJUnitPlatform()
