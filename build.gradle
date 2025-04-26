@@ -583,13 +583,55 @@ tasks.register('history') {
             // Снова пробуем собрать
             println "Пробуем скомпилировать после отката..."
 
-            def compileAttempt = exec {
-                commandLine myCompile
+            def src = file('src/main/java/com/weblab4/opilab3')
+            def outDir = file('build/classes/java/main')
+            outDir.mkdirs()
+            def javaFiles = fileTree(src).matching { include '**/*.java' }.files.collect { it.path }
+
+            if (javaFiles.isEmpty()) {
+                throw new GradleException("There are no .java files to compile")
+            }
+
+            def classpath = configurations.compileClasspath.files.join(File.pathSeparator)
+            def command = ['javac', '-d', outDir.path]
+
+            if (classpath) {
+                command += ['-cp', classpath]
+            }
+
+            command += javaFiles
+
+            println "Running: ${command.join(' ')}"
+            def result = exec {
+                commandLine command
                 ignoreExitValue = true
             }
 
-            if (compileAttempt.exitValue == 0) {
-                println "Компиляция успешна после отката!"
+            if (result.exitValue == 0) {
+                println "Компиляция успешна после отката! Формируем diff..."
+
+                def allCommits = new ByteArrayOutputStream()
+                exec {
+                    commandLine 'git', 'rev-list', '--reverse', '--all'
+                    standardOutput = allCommits
+                    ignoreExitValue true
+                }
+                def commitList = allCommits.toString().trim().split("\n")
+
+                if (commitList.size() > 1) {
+                    def secondCommit = commitList[1] // второй коммит после самого первого
+
+                    def diffOutput = new ByteArrayOutputStream()
+                    exec {
+                        commandLine 'git', 'diff', currentCommit, secondCommit
+                        standardOutput = diffOutput
+                        ignoreExitValue true
+                    }
+                } else {
+                    println "Следующий коммит не найден."
+                }
+                break
+
             } else {
                 println "Компиляция всё ещё не удалась."
             }
@@ -603,49 +645,6 @@ tasks.register('history') {
         }
     }
 }
-
-//def getCurrentCommit(File wDir) {
-//    def stdout = new ByteArrayOutputStream()
-//    exec {
-//        workingDir = wDir
-//        commandLine 'git', 'rev-parse', 'HEAD'
-//        standardOutput = stdout
-//    }
-//    return stdout.toString().trim()
-//}
-
-//def getParentCommit(File wDir, String commit) {
-//    def stdout = new ByteArrayOutputStream()
-//    exec {
-//        workingDir = wDir
-//        commandLine 'git', 'rev-parse', "${commit}^"
-//        standardOutput = stdout
-//        ignoreExitValue = true
-//    }
-//    def result = stdout.toString().trim()
-//    return result.empty ? null : result
-//}
-//
-//def getChildCommit(File wDir, String commit) {
-//    def stdout = new ByteArrayOutputStream()
-//    exec {
-//        workingDir = wDir
-//        commandLine 'git', 'rev-list', '--ancestry-path', "${commit}..HEAD", '--reverse'
-//        standardOutput = stdout
-//        ignoreExitValue = true
-//    }
-//    def commits = stdout.toString().trim().split('\n')
-//    return commits.empty ? null : commits[0]
-//}
-
-//def generateDiffReport(File wDir, String commit, File outputFile) {
-//    outputFile.parentFile.mkdirs()
-//    exec {
-//        workingDir = wDir
-//        commandLine 'git', 'diff', '--no-color', "${commit}^", commit
-//        standardOutput = new FileOutputStream(outputFile)
-//    }
-//}
 
 test {
     useJUnitPlatform()
