@@ -173,7 +173,7 @@ tasks.register('myBuild') {
         }
         println "JAR-file ${jarFile} has been successfully built"
     }
-//    finalizedBy music
+    finalizedBy music
 }
 
 tasks.register('myClean') {
@@ -292,7 +292,6 @@ tasks.register('doc') {
         }
 
     }
-    finalizedBy myBuild
 }
 
 tasks.register('packageJars', Zip) {
