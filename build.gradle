@@ -540,7 +540,7 @@ tasks.register('history') {
             attempt++
             println "Попытка #$attempt: Откат к предыдущему коммиту..."
 
-            // Получаем текущий коммит и первый коммит
+            // Получаем текущий коммит
             def currentCommit = new ByteArrayOutputStream()
             exec {
                 commandLine 'git', 'rev-parse', 'HEAD'
@@ -620,20 +620,27 @@ tasks.register('history') {
             if (result.exitValue == 0) {
                 println "Компиляция успешна после отката! Формируем diff..."
 
-                def allCommitsFromCurrent = new ByteArrayOutputStream()
+                def successCommit = new ByteArrayOutputStream()
+                exec {
+                    commandLine 'git', 'rev-parse', 'HEAD'
+                    standardOutput = successCommit
+                }
+                successCommit = successCommit.toString().trim()
+
+                def allCommitsFromSuccess = new ByteArrayOutputStream()
                 exec {
                     commandLine 'git', 'rev-list', '--reverse', 'HEAD..master'
-                    standardOutput = allCommitsFromCurrent
+                    standardOutput = allCommitsFromSuccess
                     ignoreExitValue true
                 }
-                def commitList = allCommitsFromCurrent.toString().trim().split("\n")
+                def commitList = allCommitsFromSuccess.toString().trim().split("\n")
 
                 def secondCommit = commitList[0] // cледующий коммит после текущего
 
                 def diffFile = file("build/diff.txt")
                 diffFile.parentFile.mkdirs()
                 exec {
-                    commandLine 'git', 'diff', currentCommit, secondCommit
+                    commandLine 'git', 'diff', successCommit, secondCommit
                     standardOutput = new FileOutputStream(diffFile)
                     ignoreExitValue true
                 }
