@@ -597,7 +597,8 @@ tasks.register('history') {
 }
 
 history.onlyIf {
-    tasks.getByName("myCompile").state.failure != null
+//    tasks.getByName("myCompile").state.failure != null
+    !compileSucceeded
 }
 
 //def getCurrentCommit(File wDir) {
