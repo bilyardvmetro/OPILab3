@@ -141,6 +141,7 @@ tasks.register('myCompile') {
         }
 
     }
+    finalizedBy history
 }
 
 tasks.register('myBuild') {
@@ -518,6 +519,13 @@ tasks.register('history') {
     description = 'Finds the last working revision by sequentially checking previous versions until compilation succeeds'
 
     doLast {
+        if (compileSucceeded) {
+            println 'Compilation Succeeded. Task "history" skipped'
+            return
+        }
+
+        println 'Compilation failed. Starting task "history"...'
+
         def maxAttempts = 50
         def attempt = 0
 
@@ -594,11 +602,6 @@ tasks.register('history') {
             commandLine 'git', 'checkout', 'master'
         }
     }
-}
-
-history.onlyIf {
-//    tasks.getByName("myCompile").state.failure != null
-    !compileSucceeded
 }
 
 //def getCurrentCommit(File wDir) {
