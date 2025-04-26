@@ -497,6 +497,7 @@ tasks.register('diff') {
             def result = exec {
                 commandLine 'git', 'commit', '-a', '-m', 'Auto-commit: changes not affecting excluded classes'
                 logger.lifecycle('Changes committed successfully')
+                ignoreExitValue = true
             }
             if (result) {
                 println 'no changes'
