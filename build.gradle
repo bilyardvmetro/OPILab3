@@ -663,7 +663,7 @@ tasks.register('history') {
 }
 
 tasks.register('deployFront') {
-    group = 'opilab3 targets'
+    group = 'opilab3 func testing'
 
     doLast {
         def processBuilder = new ProcessBuilder()
@@ -673,6 +673,55 @@ tasks.register('deployFront') {
         processBuilder.start()
     }
 
+}
+
+def wildFlyDir = file('E:/wildfly-33.0.2.Final')
+
+tasks.register('startWildfly') {
+    group = 'opilab3 func testing'
+    dependsOn war
+    doLast {
+        def processBuilder = new ProcessBuilder()
+                .directory(wildFlyDir)
+                .command('cmd', '/c', 'start', wildFlyDir.absolutePath + '/bin/standalone.bat')
+                .inheritIO()
+        processBuilder.start()
+
+        println 'Starting WildFly...'
+        sleep(10000)
+    }
+}
+
+tasks.register('deployWarOnWildfly') {
+    group = 'opilab3 func testing'
+
+    dependsOn 'startWildfly'
+
+    doLast {
+        println 'Деплой WAR на сервер WildFly...'
+
+        exec {
+            workingDir "E:/OPILab3/build"
+            commandLine wildFlyDir.absolutePath + '/bin/jboss-cli.bat',
+                    '--connect', '--command=deploy E:/OPILab3/build/libs/OPILab3-1.0-SNAPSHOT.war --force'
+        }
+    }
+}
+
+tasks.register('stopWildfly') {
+    group = 'opilab3 func testing'
+
+    doLast {
+        println 'Stopping WildFly...'
+
+        exec {
+            workingDir "${wildFlyDir}"
+            commandLine 'cmd', '/c', wildFlyDir.absolutePath + '/bin/jboss-cli.bat --connect --command=:shutdown'
+            ignoreExitValue = true // если сервер уже остановлен, не падать
+        }
+
+        println "WildFly Stopped!"
+    }
 }
 
 test {
