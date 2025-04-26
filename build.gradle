@@ -662,6 +662,19 @@ tasks.register('history') {
     }
 }
 
+tasks.register('deployFront') {
+    group = 'opilab3 targets'
+
+    doLast {
+        def processBuilder = new ProcessBuilder()
+                .directory(file('E:/WebLab4Frontend'))
+                .command('cmd', '/c', 'start', 'ng', 'serve')
+                .inheritIO()
+        processBuilder.start()
+    }
+
+}
+
 test {
     useJUnitPlatform()
 }
