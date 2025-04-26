@@ -1,7 +1,7 @@
 import org.xml.sax.helpers.DefaultHandler
+
 import javax.xml.parsers.DocumentBuilderFactory
 import java.security.MessageDigest
-import org.gradle.api.tasks.Exec
 
 plugins {
     id 'java'
@@ -100,38 +100,44 @@ tasks.register('myCompile') {
     outputs.dir(outDir)
 
     doLast {
-        outDir.mkdirs()
-        def javaFiles = fileTree(srcDir).matching { include '**/*.java' }.files.collect { it.path }
+        try {
+            outDir.mkdirs()
+            def javaFiles = fileTree(srcDir).matching { include '**/*.java' }.files.collect { it.path }
 
-        if (javaFiles.isEmpty()) {
-            throw new GradleException("There are no .java files to compile")
-        }
+            if (javaFiles.isEmpty()) {
+                throw new GradleException("There are no .java files to compile")
+            }
 
-        def classpath = configurations.compileClasspath.files.join(File.pathSeparator)
-        def command = ['javac', '-d', outDir.path]
+            def classpath = configurations.compileClasspath.files.join(File.pathSeparator)
+            def command = ['javac', '-d', outDir.path]
 
-        if (classpath) {
-            command += ['-cp', classpath]
-        }
+            if (classpath) {
+                command += ['-cp', classpath]
+            }
 
-        command += javaFiles
+            command += javaFiles
 
-        println "Running: ${command.join(' ')}"
-        def result = exec {
-            commandLine command
-        }
+            println "Running: ${command.join(' ')}"
+            def result = exec {
+                commandLine command
+                ignoreExitValue = true
+            }
 
-        copy {
-            from 'src/main/resources'
-            into 'build/resources/main'
-        }
+            copy {
+                from 'src/main/resources'
+                into 'build/resources/main'
+            }
 
-        if (result.exitValue == 0) {
-            println "Compilation succeeded"
-            compileSucceeded = true
-        } else {
-            println "Compilation failed"
-            compileSucceeded = false
+            if (result.exitValue == 0) {
+                println "Compilation succeeded"
+                compileSucceeded = true
+            } else {
+                println "Compilation failed"
+                compileSucceeded = false
+            }
+        } catch (Exception e) {
+            println "Ошибка при сборке: ${e.message}"
+            buildSucceeded = false
         }
 
     }
@@ -537,28 +543,23 @@ tasks.register('history') {
             if (currentCommit == firstCommit) {
                 println "Достигнут первый коммит. Формируем diff..."
 
-                def nextCommit = new ByteArrayOutputStream()
+                def allCommits = new ByteArrayOutputStream()
                 exec {
-                    commandLine 'git', 'rev-list', '--reverse', 'HEAD..HEAD@{1}'
-                    standardOutput = nextCommit
+                    commandLine 'git', 'rev-list', '--reverse', '--all'
+                    standardOutput = allCommits
                     ignoreExitValue true
                 }
+                def commitList = allCommits.toString().trim().split("\n")
 
-                def nextCommitId = nextCommit.toString().trim().split("\n")[0]
+                if (commitList.size() > 1) {
+                    def secondCommit = commitList[1] // второй коммит после самого первого
 
-                if (nextCommitId) {
                     def diffOutput = new ByteArrayOutputStream()
                     exec {
-                        commandLine 'git', 'diff', currentCommit, nextCommitId
+                        commandLine 'git', 'diff', currentCommit, secondCommit
                         standardOutput = diffOutput
                         ignoreExitValue true
                     }
-
-                    def diffFile = file("build/diff_report.txt")
-                    diffFile.parentFile.mkdirs()
-                    diffFile.text = diffOutput.toString()
-
-                    println "Diff сохранён в ${diffFile.path}"
                 } else {
                     println "Следующий коммит не найден."
                 }
@@ -579,17 +580,18 @@ tasks.register('history') {
                 ignoreExitValue = true
             }
 
-            buildSucceeded = (compileAttempt.exitValue == 0)
-
-            if (buildSucceeded) {
+            if (compileAttempt.exitValue == 0) {
                 println "Компиляция успешна после отката!"
             } else {
                 println "Компиляция всё ещё не удалась."
             }
         }
 
-        if (!buildSucceeded) {
+        if (!compileSucceeded) {
             throw new GradleException("Не удалось собрать проект ни на одной ревизии.")
+        }
+        exec {
+            commandLine 'git', 'checkout', 'master'
         }
     }
 }
