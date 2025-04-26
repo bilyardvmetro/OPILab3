@@ -570,9 +570,10 @@ tasks.register('history') {
                     }
 
                     def diffFile = file("build/diff.txt")
-                    diffFile.parentFile.mkdirs()
-                    diffFile.text = diffOutput.toString()
-
+                    exec {
+                        commandLine 'git', 'diff', currentCommit, secondCommit, '>', diffFile.name
+                        ignoreExitValue true
+                    }
                     println "Diff записан в файл: ${diffFile.absolutePath}"
                     compileSucceeded = true
                 } else {
@@ -626,17 +627,11 @@ tasks.register('history') {
 
                 def secondCommit = commitList[0] // cледующий коммит после текущего
 
-                def diffOutput = new ByteArrayOutputStream()
+                def diffFile = file("build/diff.txt")
                 exec {
-                    commandLine 'git', 'diff', currentCommit, secondCommit
-                    standardOutput = diffOutput
+                    commandLine 'git', 'diff', currentCommit, secondCommit, '>', diffFile.name
                     ignoreExitValue true
                 }
-
-                def diffFile = file("build/diff.txt")
-                diffFile.parentFile.mkdirs()
-                diffFile.text = diffOutput.toString()
-
                 println "Diff записан в файл: ${diffFile.absolutePath}"
                 compileSucceeded = true
 
