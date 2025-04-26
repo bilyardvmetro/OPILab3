@@ -574,6 +574,7 @@ tasks.register('history') {
                     diffFile.text = diffOutput.toString()
 
                     println "Diff записан в файл: ${diffFile.absolutePath}"
+                    compileSucceeded = true
                 } else {
                     println "Следующий коммит не найден."
                 }
@@ -637,6 +638,7 @@ tasks.register('history') {
                 diffFile.text = diffOutput.toString()
 
                 println "Diff записан в файл: ${diffFile.absolutePath}"
+                compileSucceeded = true
 
                 break
 
