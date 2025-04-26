@@ -570,12 +570,15 @@ tasks.register('history') {
                     }
 
                     def diffFile = file("build/diff.txt")
+                    diffFile.parentFile.mkdirs()
                     exec {
-                        commandLine 'git', 'diff', currentCommit, secondCommit, '>', diffFile.name
+                        commandLine 'git', 'diff', currentCommit, secondCommit
+                        standardOutput = new FileOutputStream(diffFile)
                         ignoreExitValue true
                     }
                     println "Diff записан в файл: ${diffFile.absolutePath}"
                     compileSucceeded = true
+
                 } else {
                     println "Следующий коммит не найден."
                 }
@@ -628,8 +631,10 @@ tasks.register('history') {
                 def secondCommit = commitList[0] // cледующий коммит после текущего
 
                 def diffFile = file("build/diff.txt")
+                diffFile.parentFile.mkdirs()
                 exec {
-                    commandLine 'git', 'diff', currentCommit, secondCommit, '>', diffFile.name
+                    commandLine 'git', 'diff', currentCommit, secondCommit
+                    standardOutput = new FileOutputStream(diffFile)
                     ignoreExitValue true
                 }
                 println "Diff записан в файл: ${diffFile.absolutePath}"
