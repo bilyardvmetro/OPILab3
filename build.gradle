@@ -568,6 +568,12 @@ tasks.register('history') {
                         standardOutput = diffOutput
                         ignoreExitValue true
                     }
+
+                    def diffFile = file("build/diff.txt")
+                    diffFile.parentFile.mkdirs()
+                    diffFile.text = diffOutput.toString()
+
+                    println "Diff записан в файл: ${diffFile.absolutePath}"
                 } else {
                     println "Следующий коммит не найден."
                 }
@@ -601,7 +607,6 @@ tasks.register('history') {
 
             command += javaFiles
 
-//            println "Running: ${command.join(' ')}"
             def result = exec {
                 commandLine command
                 ignoreExitValue = true
@@ -610,26 +615,29 @@ tasks.register('history') {
             if (result.exitValue == 0) {
                 println "Компиляция успешна после отката! Формируем diff..."
 
-                def allCommits = new ByteArrayOutputStream()
+                def allCommitsFromCurrent = new ByteArrayOutputStream()
                 exec {
-                    commandLine 'git', 'rev-list', '--reverse', '--all'
-                    standardOutput = allCommits
+                    commandLine 'git', 'rev-list', '--reverse', 'HEAD..master'
+                    standardOutput = allCommitsFromCurrent
                     ignoreExitValue true
                 }
-                def commitList = allCommits.toString().trim().split("\n")
+                def commitList = allCommitsFromCurrent.toString().trim().split("\n")
 
-                if (commitList.size() > 1) {
-                    def secondCommit = commitList[1] // второй коммит после самого первого
+                def secondCommit = commitList[0] // cледующий коммит после текущего
 
-                    def diffOutput = new ByteArrayOutputStream()
-                    exec {
-                        commandLine 'git', 'diff', currentCommit, secondCommit
-                        standardOutput = diffOutput
-                        ignoreExitValue true
-                    }
-                } else {
-                    println "Следующий коммит не найден."
+                def diffOutput = new ByteArrayOutputStream()
+                exec {
+                    commandLine 'git', 'diff', currentCommit, secondCommit
+                    standardOutput = diffOutput
+                    ignoreExitValue true
                 }
+
+                def diffFile = file("build/diff.txt")
+                diffFile.parentFile.mkdirs()
+                diffFile.text = diffOutput.toString()
+
+                println "Diff записан в файл: ${diffFile.absolutePath}"
+
                 break
 
             } else {
