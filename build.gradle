@@ -515,6 +515,13 @@ tasks.register('history') {
         def maxAttempts = 50
         def attempt = 0
 
+        def firstCommit = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--max-parents=0', 'HEAD'
+            standardOutput = firstCommit
+        }
+        firstCommit = firstCommit.toString().trim()
+
         while (!compileSucceeded && attempt < maxAttempts) {
             attempt++
             println "Попытка #$attempt: Откат к предыдущему коммиту..."
@@ -526,13 +533,6 @@ tasks.register('history') {
                 standardOutput = currentCommit
             }
             currentCommit = currentCommit.toString().trim()
-
-            def firstCommit = new ByteArrayOutputStream()
-            exec {
-                commandLine 'git', 'rev-list', '--max-parents=0', 'HEAD'
-                standardOutput = firstCommit
-            }
-            firstCommit = firstCommit.toString().trim()
 
             if (currentCommit == firstCommit) {
                 println "Достигнут первый коммит. Формируем diff..."
