@@ -538,7 +538,7 @@ tasks.register('history') {
 
         while (!compileSucceeded && attempt < maxAttempts) {
             attempt++
-            println "Попытка #$attempt: Откат к предыдущему коммиту..."
+            println "Attempt #$attempt: Switching to previous commit..."
 
             // Получаем текущий коммит
             def currentCommit = new ByteArrayOutputStream()
@@ -549,7 +549,7 @@ tasks.register('history') {
             currentCommit = currentCommit.toString().trim()
 
             if (currentCommit == firstCommit) {
-                println "Достигнут первый коммит. Формируем diff..."
+                println "First commit reached. Making diff.txt file..."
 
                 def allCommits = new ByteArrayOutputStream()
                 exec {
@@ -576,11 +576,11 @@ tasks.register('history') {
                         standardOutput = new FileOutputStream(diffFile)
                         ignoreExitValue true
                     }
-                    println "Diff записан в файл: ${diffFile.absolutePath}"
+                    println "Diff now in: ${diffFile.absolutePath}"
                     compileSucceeded = true
 
                 } else {
-                    println "Следующий коммит не найден."
+                    println "There is no next commit"
                 }
 
                 break
@@ -592,7 +592,7 @@ tasks.register('history') {
             }
 
             // Снова пробуем собрать
-            println "Пробуем скомпилировать после отката..."
+            println "Trying to compile..."
 
             def src = file('src/main/java/com/weblab4/opilab3')
             def outDir = file('build/classes/java/main')
@@ -618,7 +618,7 @@ tasks.register('history') {
             }
 
             if (result.exitValue == 0) {
-                println "Компиляция успешна после отката! Формируем diff..."
+                println "Compile Success! Making diff.txt ..."
 
                 def successCommit = new ByteArrayOutputStream()
                 exec {
@@ -644,18 +644,18 @@ tasks.register('history') {
                     standardOutput = new FileOutputStream(diffFile)
                     ignoreExitValue true
                 }
-                println "Diff записан в файл: ${diffFile.absolutePath}"
+                println "Diff now in: ${diffFile.absolutePath}"
                 compileSucceeded = true
 
                 break
 
             } else {
-                println "Компиляция всё ещё не удалась."
+                println "Compilation still failed."
             }
         }
 
         if (!compileSucceeded) {
-            throw new GradleException("Не удалось собрать проект ни на одной ревизии.")
+            throw new GradleException("Unable to build project on any revision")
         }
         exec {
             commandLine 'git', 'checkout', 'master'
