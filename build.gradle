@@ -684,10 +684,47 @@ tasks.register('deployFront') {
 
 }
 
+tasks.register('stopFront') {
+    group = 'opilab3 func testing'
+
+    doLast {
+        println 'Searching for process on port 4200...'
+
+        def findProcessOutput = new ByteArrayOutputStream()
+        exec {
+            commandLine 'cmd', '/c', 'netstat -aon | findstr :4200'
+            standardOutput = findProcessOutput
+            ignoreExitValue true // чтобы не упасть, если ничего не найдено
+        }
+
+        def output = findProcessOutput.toString('CP866').trim()
+
+        if (output.isEmpty()) {
+            println 'No process running on 4200.'
+        } else {
+            println "Found process:\n${output}"
+
+            // Извлечем PID процесса
+            def lines = output.readLines()
+            def pidList = lines.collect { it.split(/\s+/)[-1] }.unique()
+
+            pidList.each { pid ->
+                println "Stopping process PID = $pid..."
+                exec {
+                    commandLine 'cmd', '/c', "taskkill /PID $pid /F"
+                }
+            }
+            println 'ng serve stopped'
+        }
+    }
+}
+
 def wildFlyDir = file('E:/wildfly-33.0.2.Final')
 
 tasks.register('startWildfly') {
     group = 'opilab3 func testing'
+
+    dependsOn deployFront
 
     doLast {
         def processBuilder = new ProcessBuilder()
@@ -701,11 +738,13 @@ tasks.register('startWildfly') {
     }
 }
 
+myCompile.finalizedBy war
+
 tasks.register('deployWarOnWildfly') {
     group = 'opilab3 func testing'
 
-    dependsOn startWildfly, war //, myBuild
-    // mustRunAfter myBuild
+    dependsOn startWildfly, war, myBuild
+    mustRunAfter myBuild
 
     doLast {
         println 'Деплой WAR на сервер WildFly...'
@@ -747,7 +786,7 @@ def functionalClassesDir = "build/classes/java/main/funcTests"
 tasks.register('compileFuncTests') {
     group = 'opilab3 func testing'
 
-    // dependsOn deployWarOnWildfly
+    dependsOn deployWarOnWildfly
 
     inputs.dir functionalSrcDir
     outputs.dir functionalClassesDir
@@ -804,6 +843,7 @@ tasks.register("runFuncTests") {
         println "Functional tests run finished."
     }
 }
+runFuncTests.finalizedBy stopWildfly, stopFront
 
 test {
     useJUnitPlatform()
