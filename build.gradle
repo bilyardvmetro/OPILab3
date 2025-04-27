@@ -60,12 +60,12 @@ dependencies {
     // Интерфейсы (javax.xml.parsers, org.w3c.dom и др.)
     implementation 'xml-apis:xml-apis:1.4.01'
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+    implementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")       // testImplementation
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 
-    functionalTestImplementation "org.junit.platform:junit-platform-console:1.9.2"
-    functionalTestImplementation "org.apiguardian:apiguardian-api:1.1.2"
-    functionalTestImplementation "org.seleniumhq.selenium:selenium-java:${seleniumVersion}"
+    implementation "org.junit.platform:junit-platform-console:1.9.2"        // func testImplementation
+    implementation "org.apiguardian:apiguardian-api:1.1.2"                  // func testImplementation
+    implementation "org.seleniumhq.selenium:selenium-java:${seleniumVersion}" // func testImplementation
 }
 
 tasks.register('music') {
