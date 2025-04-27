@@ -17,6 +17,11 @@ repositories {
 
 ext {
     junitVersion = '5.11.0-M2'
+    seleniumVersion = '4.31.0'
+}
+configurations {
+    functionalTestImplementation.extendsFrom testImplementation
+    functionalTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 sourceCompatibility = '17'
@@ -57,6 +62,10 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+
+    functionalTestImplementation "org.junit.platform:junit-platform-console:1.9.2"
+    functionalTestImplementation "org.apiguardian:apiguardian-api:1.1.2"
+    functionalTestImplementation "org.seleniumhq.selenium:selenium-java:${seleniumVersion}"
 }
 
 tasks.register('music') {
@@ -679,7 +688,7 @@ def wildFlyDir = file('E:/wildfly-33.0.2.Final')
 
 tasks.register('startWildfly') {
     group = 'opilab3 func testing'
-    dependsOn war
+
     doLast {
         def processBuilder = new ProcessBuilder()
                 .directory(wildFlyDir)
@@ -695,7 +704,8 @@ tasks.register('startWildfly') {
 tasks.register('deployWarOnWildfly') {
     group = 'opilab3 func testing'
 
-    dependsOn 'startWildfly'
+    dependsOn startWildfly, war //, myBuild
+    // mustRunAfter myBuild
 
     doLast {
         println 'Деплой WAR на сервер WildFly...'
@@ -728,6 +738,70 @@ tasks.register('stopWildfly') {
         }
 
         println "WildFly Stopped!"
+    }
+}
+
+def functionalSrcDir = 'src/main/java/funcTests'
+def functionalClassesDir = "build/classes/java/main/funcTests"
+
+tasks.register('compileFuncTests') {
+    group = 'opilab3 func testing'
+
+    // dependsOn deployWarOnWildfly
+
+    inputs.dir functionalSrcDir
+    outputs.dir functionalClassesDir
+
+    doLast {
+        println "Compiling functional test classes..."
+
+        file(functionalClassesDir).mkdirs()
+
+        def srcFiles = fileTree(dir: functionalSrcDir, include: '**/*.java').files*.path
+        if (srcFiles.isEmpty()) {
+            println "No functional test sources found."
+            return
+        }
+
+        def classpath = configurations.functionalTestImplementation.asPath
+        def cmd = ["javac", "-d", functionalClassesDir, "-cp", classpath] + srcFiles
+
+        exec {
+            commandLine cmd
+        }
+
+        println "Functional tests compiled successfully."
+    }
+}
+
+tasks.register("runFuncTests") {
+    group = 'opilab3 func testing'
+    dependsOn compileFuncTests
+
+    doLast {
+        println "Running functional tests..."
+
+        def classpath = files(
+                functionalClassesDir,
+                configurations.functionalTestRuntimeOnly,
+                configurations.functionalTestImplementation
+        ).asPath
+
+        def cmd = [
+                "java",
+                "-cp", classpath,
+                "org.junit.platform.console.ConsoleLauncher",
+                "--scan-class-path", functionalClassesDir,
+                "--details", "tree",
+                "--details-theme", "ascii"
+        ]
+
+        exec {
+            commandLine cmd
+            ignoreExitValue = true
+        }
+
+        println "Functional tests run finished."
     }
 }
 
