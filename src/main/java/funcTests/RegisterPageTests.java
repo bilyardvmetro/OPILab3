@@ -1,5 +1,6 @@
 package funcTests;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,9 +29,10 @@ public class RegisterPageTests {
 
         driver = new ChromeDriver(options);
         driver.get("http://localhost:4200/register");
+        driver.manage().window().maximize();
     }
 
-    // 1
+    // 8
     @Test
     public void testRegisterSuccess() {
         WebElement loginInput = driver.findElement(By.id("username"));
@@ -49,7 +51,7 @@ public class RegisterPageTests {
         Assertions.assertEquals("http://localhost:4200/login", currentUrl);
     }
 
-    // 2
+    // 9
     @Test
     public void testRegisterFail() {
         WebElement loginInput = driver.findElement(By.id("username"));
@@ -75,7 +77,7 @@ public class RegisterPageTests {
         Assertions.assertEquals("http://localhost:4200/register", currentUrl);
     }
 
-    // 3
+    // 10
     @Test
     public void testEmptyUsername() {
         WebElement loginInput = driver.findElement(By.id("username"));
@@ -97,7 +99,7 @@ public class RegisterPageTests {
         Assertions.assertEquals("http://localhost:4200/register", currentUrl);
     }
 
-    // 4
+    // 11
     @Test
     public void testEmptyPassword() {
         WebElement loginInput = driver.findElement(By.id("username"));
@@ -120,7 +122,7 @@ public class RegisterPageTests {
         Assertions.assertEquals("http://localhost:4200/register", currentUrl);
     }
 
-    // 5
+    // 12
     @Test
     public void testTooShortUsername() {
         WebElement loginInput = driver.findElement(By.id("username"));
@@ -142,7 +144,7 @@ public class RegisterPageTests {
         Assertions.assertEquals("http://localhost:4200/register", currentUrl);
     }
 
-    // 6
+    // 13
     @Test
     public void testTooShortPassword() {
         WebElement loginInput = driver.findElement(By.id("username"));
@@ -163,5 +165,12 @@ public class RegisterPageTests {
 
         String currentUrl = driver.getCurrentUrl();
         Assertions.assertEquals("http://localhost:4200/register", currentUrl);
+    }
+
+    @AfterEach
+    public void teardown() {
+        if (driver != null) {
+            driver.quit();
+        }
     }
 }

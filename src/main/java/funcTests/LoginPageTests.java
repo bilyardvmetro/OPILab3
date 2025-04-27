@@ -1,5 +1,6 @@
 package funcTests;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ public class LoginPageTests {
 
         driver = new ChromeDriver(options);
         driver.get("http://localhost:4200");
+        driver.manage().window().maximize();
     }
 
     // 1
@@ -163,6 +165,7 @@ public class LoginPageTests {
         Assertions.assertEquals("http://localhost:4200/login", currentUrl);
     }
 
+    // 7
     @Test
     public void testUnauthorizedUserAccess() {
         WebElement homeLink = driver.findElement(By.id("home-link"));
@@ -171,5 +174,12 @@ public class LoginPageTests {
 
         String currentUrl = driver.getCurrentUrl();
         Assertions.assertEquals("http://localhost:4200/login", currentUrl);
+    }
+
+    @AfterEach
+    public void teardown() {
+        if (driver != null) {
+            driver.quit();
+        }
     }
 }
