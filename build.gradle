@@ -688,7 +688,7 @@ tasks.register('startWildfly') {
         processBuilder.start()
 
         println 'Starting WildFly...'
-        sleep(10000)
+        sleep(15000)
     }
 }
 
@@ -699,6 +699,13 @@ tasks.register('deployWarOnWildfly') {
 
     doLast {
         println 'Деплой WAR на сервер WildFly...'
+
+        exec {
+            workingDir "E:/OPILab3/build"
+            commandLine wildFlyDir.absolutePath + '/bin/jboss-cli.bat',
+                    '--connect', '--command=undeploy OPILab3-1.0-SNAPSHOT.war'
+            ignoreExitValue = true
+        }
 
         exec {
             workingDir "E:/OPILab3/build"
