@@ -162,4 +162,14 @@ public class LoginPageTests {
         String currentUrl = driver.getCurrentUrl();
         Assertions.assertEquals("http://localhost:4200/login", currentUrl);
     }
+
+    @Test
+    public void testUnauthorizedUserAccess() {
+        WebElement homeLink = driver.findElement(By.id("home-link"));
+        homeLink.click();
+        new WebDriverWait(driver, Duration.ofSeconds(5)).until(ExpectedConditions.urlContains("/login"));
+
+        String currentUrl = driver.getCurrentUrl();
+        Assertions.assertEquals("http://localhost:4200/login", currentUrl);
+    }
 }
