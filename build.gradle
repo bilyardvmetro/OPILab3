@@ -666,7 +666,7 @@ tasks.register('history') {
             throw new GradleException("Unable to build project on any revision")
         }
         exec {
-            commandLine 'git', 'checkout', 'master'
+            commandLine 'git', 'checkout', 'main'
         }
     }
 }
