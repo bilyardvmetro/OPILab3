@@ -671,6 +671,31 @@ tasks.register('history') {
     }
 }
 
+tasks.register('report') {
+    group = 'opilab3 targets'
+
+
+    doLast {
+        if (file("build/test-success.flag").exists()) {
+            println "Commiting test report to git repo..."
+
+            exec {
+                workingDir '.'
+                commandLine 'git', 'add', 'test-results'
+            }
+
+            exec {
+                workingDir '.'
+                commandLine 'git', 'commit', '-m', 'Auto commit: Add test report'
+            }
+
+            println "Test reports added to git repo!"
+        } else {
+            println 'Task "report" skip due to failed tests'
+        }
+    }
+}
+
 tasks.register('deployFront') {
     group = 'opilab3 func testing'
 
@@ -707,11 +732,13 @@ tasks.register('stopFront') {
             // Извлечем PID процесса
             def lines = output.readLines()
             def pidList = lines.collect { it.split(/\s+/)[-1] }.unique()
+            pidList = pidList.findAll {it != '0'}
 
             pidList.each { pid ->
                 println "Stopping process PID = $pid..."
                 exec {
                     commandLine 'cmd', '/c', "taskkill /PID $pid /F"
+                    ignoreExitValue true
                 }
             }
             println 'ng serve stopped'
@@ -734,7 +761,29 @@ tasks.register('startWildfly') {
         processBuilder.start()
 
         println 'Starting WildFly...'
-        sleep(15000)
+
+        // Ждем пока порт 8080 откроется
+        int timeoutSeconds = 60
+        int waited = 0
+        boolean isStarted = false
+
+        while (waited < timeoutSeconds) {
+            try {
+                Socket socket = new Socket('localhost', 8080)
+                socket.close()
+                isStarted = true
+                break
+            } catch (Exception ignored) {
+                sleep(1000) // ждем 1 секунду
+                waited++
+            }
+        }
+
+        if (isStarted) {
+            println "WildFly started successfully!"
+        } else {
+            throw new GradleException("Couldn't start WildFly in ${timeoutSeconds} seconds.")
+        }
     }
 }
 
@@ -826,24 +875,35 @@ tasks.register("runFuncTests") {
                 configurations.functionalTestImplementation
         ).asPath
 
+        def reportDir = "test-results/func-tests"
+        mkdir(reportDir)
+
         def cmd = [
                 "java",
                 "-cp", classpath,
                 "org.junit.platform.console.ConsoleLauncher",
                 "--scan-class-path", functionalClassesDir,
                 "--details", "tree",
-                "--details-theme", "ascii"
+                "--details-theme", "ascii",
+                "--reports-dir=${reportDir}"
         ]
 
-        exec {
+        def res = exec {
             commandLine cmd
             ignoreExitValue = true
+        }
+
+        if (res.exitValue == 0) {
+            println "All tests passed!"
+            file("build/test-success.flag").text = "success"
+        }  else {
+            println "Tests failed."
         }
 
         println "Functional tests run finished."
     }
 }
-runFuncTests.finalizedBy stopWildfly, stopFront
+runFuncTests.finalizedBy stopWildfly, stopFront, report
 
 test {
     useJUnitPlatform()
