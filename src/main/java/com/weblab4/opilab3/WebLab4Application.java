@@ -8,7 +8,5 @@ import jakarta.ws.rs.core.Application;
  */
 @ApplicationPath("/api")
 public class WebLab4Application extends Application {
-            asdadasdas
-    fffffff
-                    fffffff
+
 }

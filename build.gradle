@@ -94,7 +94,7 @@ tasks.register('music') {
     }
 }
 
-def srcDir = file('src/main/java/com/weblab4/opilab3')
+def srcDir = file('src/main/java')
 ext.compileSucceeded = true
 
 tasks.register('myCompile') {
@@ -182,11 +182,50 @@ tasks.register('myBuild') {
         }
         println "JAR-file ${jarFile} has been successfully built"
     }
-    finalizedBy music
+    finalizedBy music, runFuncTests
 }
 
 tasks.register('myWar') {
-    dependsOn myBuild
+    group = 'OPILab3 func testing'
+
+    dependsOn myCompile
+
+    doLast {
+        def warFile = file("build/libs/OPILab3-1.0-SNAPSHOT.war") // куда положим результат
+        def compiledClassesDir = file("build/classes/java/main") // папка с .class файлами
+
+        def warTmpDir = file("build/tmp/war")
+        def webInfDir = new File(warTmpDir, 'WEB-INF')
+        def libsDir = new File(webInfDir, 'lib')
+
+        def resourcesDir = file('src/main/resources/')
+
+        warFile.parentFile.mkdirs()
+        mkdir webInfDir
+
+        copy {
+            from compiledClassesDir
+            into "${webInfDir}/classes"
+        }
+
+        copy {
+            from resourcesDir
+            into "${webInfDir}/classes"
+        }
+
+        copy {
+            from configurations.runtimeClasspath
+            into libsDir
+        }
+
+        exec {
+            workingDir warTmpDir
+            commandLine 'jar', 'cf', warFile.absolutePath, '.'
+        }
+        delete warTmpDir
+
+        println "WAR собран: ${warFile}"
+    }
 
 }
 
@@ -793,13 +832,11 @@ tasks.register('startWildfly') {
     }
 }
 
-myCompile.finalizedBy war
-
 tasks.register('deployWarOnWildfly') {
     group = 'opilab3 func testing'
 
-    dependsOn startWildfly, war, myBuild
-    mustRunAfter myBuild
+    dependsOn startWildfly, myWar
+    mustRunAfter startWildfly
 
     doLast {
         println 'Деплой WAR на сервер WildFly...'
