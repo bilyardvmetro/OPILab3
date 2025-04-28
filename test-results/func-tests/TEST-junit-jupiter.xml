@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="JUnit Jupiter" tests="18" skipped="0" failures="0" errors="0" time="41.835" hostname="kirill-pael-supa" timestamp="2025-04-28T19:13:00">
+<testsuite name="JUnit Jupiter" tests="18" skipped="0" failures="0" errors="0" time="45.723" hostname="kirill-pael-supa" timestamp="2025-04-28T21:01:06">
 <properties>
 <property name="file.encoding" value="UTF-8"/>
 <property name="file.separator" value="\"/>
@@ -57,109 +57,109 @@
 <property name="user.variant" value=""/>
 <property name="webdriver.chrome.driver" value="E:\OPILab3\drivers\chromedriver.exe"/>
 </properties>
-<testcase name="testHitFalse()" classname="funcTests.MainPageTests" time="2.998">
+<testcase name="testHitFalse()" classname="funcTests.MainPageTests" time="3.203">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.MainPageTests]/[method:testHitFalse()]
 display-name: testHitFalse()
 ]]></system-out>
 </testcase>
-<testcase name="testLogout()" classname="funcTests.MainPageTests" time="2.055">
+<testcase name="testLogout()" classname="funcTests.MainPageTests" time="2.003">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.MainPageTests]/[method:testLogout()]
 display-name: testLogout()
 ]]></system-out>
 </testcase>
-<testcase name="testEmptyPassword()" classname="funcTests.LoginPageTests" time="2.222">
+<testcase name="testEmptyPassword()" classname="funcTests.LoginPageTests" time="1.525">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testEmptyPassword()]
 display-name: testEmptyPassword()
 ]]></system-out>
 </testcase>
-<testcase name="testHitByInputs()" classname="funcTests.MainPageTests" time="2.893">
+<testcase name="testHitByInputs()" classname="funcTests.MainPageTests" time="2.876">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.MainPageTests]/[method:testHitByInputs()]
 display-name: testHitByInputs()
 ]]></system-out>
 </testcase>
-<testcase name="testLoginFail()" classname="funcTests.LoginPageTests" time="2.412">
+<testcase name="testLoginFail()" classname="funcTests.LoginPageTests" time="2.224">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testLoginFail()]
 display-name: testLoginFail()
 ]]></system-out>
 </testcase>
-<testcase name="testTooShortUsername()" classname="funcTests.RegisterPageTests" time="1.618">
+<testcase name="testTooShortUsername()" classname="funcTests.RegisterPageTests" time="2.497">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.RegisterPageTests]/[method:testTooShortUsername()]
 display-name: testTooShortUsername()
 ]]></system-out>
 </testcase>
-<testcase name="testEmptyPassword()" classname="funcTests.RegisterPageTests" time="2.519">
+<testcase name="testEmptyPassword()" classname="funcTests.RegisterPageTests" time="1.804">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.RegisterPageTests]/[method:testEmptyPassword()]
 display-name: testEmptyPassword()
 ]]></system-out>
 </testcase>
-<testcase name="testHitByClick()" classname="funcTests.MainPageTests" time="3.008">
+<testcase name="testHitByClick()" classname="funcTests.MainPageTests" time="2.865">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.MainPageTests]/[method:testHitByClick()]
 display-name: testHitByClick()
 ]]></system-out>
 </testcase>
-<testcase name="testEmptyUsername()" classname="funcTests.RegisterPageTests" time="3.074">
+<testcase name="testEmptyUsername()" classname="funcTests.RegisterPageTests" time="3.964">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.RegisterPageTests]/[method:testEmptyUsername()]
 display-name: testEmptyUsername()
 ]]></system-out>
 </testcase>
-<testcase name="testTooShortPassword()" classname="funcTests.RegisterPageTests" time="1.652">
+<testcase name="testTooShortPassword()" classname="funcTests.RegisterPageTests" time="1.731">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.RegisterPageTests]/[method:testTooShortPassword()]
 display-name: testTooShortPassword()
 ]]></system-out>
 </testcase>
-<testcase name="testRegisterSuccess()" classname="funcTests.RegisterPageTests" time="2.384">
+<testcase name="testRegisterSuccess()" classname="funcTests.RegisterPageTests" time="4.046">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.RegisterPageTests]/[method:testRegisterSuccess()]
 display-name: testRegisterSuccess()
 ]]></system-out>
 </testcase>
-<testcase name="testEmptyUsername()" classname="funcTests.LoginPageTests" time="1.657">
+<testcase name="testEmptyUsername()" classname="funcTests.LoginPageTests" time="1.477">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testEmptyUsername()]
 display-name: testEmptyUsername()
 ]]></system-out>
 </testcase>
-<testcase name="testTooShortUsername()" classname="funcTests.LoginPageTests" time="1.724">
+<testcase name="testTooShortUsername()" classname="funcTests.LoginPageTests" time="1.507">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testTooShortUsername()]
 display-name: testTooShortUsername()
 ]]></system-out>
 </testcase>
-<testcase name="testLoginSuccess()" classname="funcTests.LoginPageTests" time="2.409">
+<testcase name="testLoginSuccess()" classname="funcTests.LoginPageTests" time="2.462">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testLoginSuccess()]
 display-name: testLoginSuccess()
 ]]></system-out>
 </testcase>
-<testcase name="testTooShortPassword()" classname="funcTests.LoginPageTests" time="1.872">
+<testcase name="testTooShortPassword()" classname="funcTests.LoginPageTests" time="3.656">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testTooShortPassword()]
 display-name: testTooShortPassword()
 ]]></system-out>
 </testcase>
-<testcase name="testRegisterFail()" classname="funcTests.RegisterPageTests" time="2.593">
+<testcase name="testRegisterFail()" classname="funcTests.RegisterPageTests" time="3.428">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.RegisterPageTests]/[method:testRegisterFail()]
 display-name: testRegisterFail()
 ]]></system-out>
 </testcase>
-<testcase name="testHitTrue()" classname="funcTests.MainPageTests" time="2.989">
+<testcase name="testHitTrue()" classname="funcTests.MainPageTests" time="3.005">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.MainPageTests]/[method:testHitTrue()]
 display-name: testHitTrue()
 ]]></system-out>
 </testcase>
-<testcase name="testUnauthorizedUserAccess()" classname="funcTests.LoginPageTests" time="1.691">
+<testcase name="testUnauthorizedUserAccess()" classname="funcTests.LoginPageTests" time="1.38">
 <system-out><![CDATA[
 unique-id: [engine:junit-jupiter]/[class:funcTests.LoginPageTests]/[method:testUnauthorizedUserAccess()]
 display-name: testUnauthorizedUserAccess()
