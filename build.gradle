@@ -637,7 +637,7 @@ tasks.register('history') {
 
                 def allCommitsFromSuccess = new ByteArrayOutputStream()
                 exec {
-                    commandLine 'git', 'rev-list', '--reverse', 'HEAD..master'
+                    commandLine 'git', 'rev-list', '--reverse', 'HEAD..main'
                     standardOutput = allCommitsFromSuccess
                     ignoreExitValue true
                 }
