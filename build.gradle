@@ -95,7 +95,7 @@ tasks.register('music') {
 }
 
 def srcDir = file('src/main/java/com/weblab4/opilab3')
-ext.compileSucceeded = false
+ext.compileSucceeded = true
 
 tasks.register('myCompile') {
     description = 'Compile .java files'
@@ -690,6 +690,7 @@ tasks.register('report') {
             }
 
             println "Test reports added to git repo!"
+            file("build/test-success.flag").delete()
         } else {
             println 'Task "report" skip due to failed tests'
         }
