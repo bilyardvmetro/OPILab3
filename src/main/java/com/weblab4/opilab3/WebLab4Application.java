@@ -10,4 +10,5 @@ import jakarta.ws.rs.core.Application;
 public class WebLab4Application extends Application {
             asdadasdas
     fffffff
+                    fffffff
 }
