@@ -185,6 +185,11 @@ tasks.register('myBuild') {
     finalizedBy music
 }
 
+tasks.register('myWar') {
+    dependsOn myBuild
+
+}
+
 tasks.register('myClean') {
     description = 'Remove \'build\' directory'
     group = 'OPILab3 targets'
